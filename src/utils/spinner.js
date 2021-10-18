@@ -1,59 +1,65 @@
-const ora = require('ora')
-const chalk = require('chalk')
+/* eslint-disable no-param-reassign */
+const ora = require('ora');
+const chalk = require('chalk');
 
-const spinner = ora()
-let lastMsg = null
-let isPaused = false
+const spinner = ora();
+let lastMsg = null;
+let isPaused = false;
 
 exports.logWithSpinner = (symbol, msg) => {
   if (!msg) {
-    msg = symbol
-    symbol = chalk.green('✔')
+    msg = symbol;
+    symbol = chalk.green('✔');
   }
   if (lastMsg) {
     spinner.stopAndPersist({
       symbol: lastMsg.symbol,
       text: lastMsg.text,
-    })
+    });
   }
-  spinner.text = ' ' + msg
+  spinner.text = ` ${msg}`;
   lastMsg = {
-    symbol: symbol + ' ',
+    symbol: `${symbol} `,
     text: msg,
-  }
-  spinner.start()
-}
+  };
+  spinner.start();
+};
 
+/**
+ *
+ * @param {boolean} persist 为false时，隐藏上一条spinner，否则显示✔+msg
+ * @returns
+ */
 exports.stopSpinner = (persist) => {
   if (!spinner.isSpinning) {
-    return
+    return;
   }
 
   if (lastMsg && persist !== false) {
     spinner.stopAndPersist({
       symbol: lastMsg.symbol,
       text: lastMsg.text,
-    })
+    });
   } else {
-    spinner.stop()
+    spinner.stop();
   }
-  lastMsg = null
-}
+  lastMsg = null;
+};
 
 exports.pauseSpinner = () => {
   if (spinner.isSpinning) {
-    spinner.stop()
-    isPaused = true
+    spinner.stop();
+    isPaused = true;
   }
-}
+};
 
 exports.resumeSpinner = () => {
   if (isPaused) {
-    spinner.start()
-    isPaused = false
+    spinner.start();
+    isPaused = false;
   }
-}
+};
 
 exports.failSpinner = (text) => {
-  spinner.fail(text)
-}
+  spinner.fail(text);
+};
