@@ -27,7 +27,7 @@ program
 
 program
   .command('list')
-  .description('查看模板列表')
+  .description('查看模板列表，包括名称、描述等')
   .alias('ls')
   .action(() => {
     logList();

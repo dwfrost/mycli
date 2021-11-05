@@ -2,6 +2,7 @@ const path = require('path');
 const execa = require('execa');
 const ora = require('ora');
 const download = require('download-git-repo');
+const inquirer = require('inquirer');
 
 const { getTemplates } = require('./list');
 const log = require('../utils/loggers');
@@ -16,7 +17,7 @@ function downloadRepo(url, projectName) {
     download(
       // todo 如果是私域工程，可能无法下载。此时需要凭证，参考 https://www.npmjs.com/package/download-git-repo
       url, // 直接下载zip包
-      projectName,
+      projectName, // 将git下载到该目录
       (err) => {
         spinner.stop();
         if (err) {
@@ -32,8 +33,10 @@ function downloadRepo(url, projectName) {
   });
 }
 
-async function getDownloadUrl(targetTemplate) {
-  const list = await getTemplates();
+async function getDownloadUrl(list, targetTemplate) {
+//   console.log('targetTemplate', targetTemplate);
+  //   const list = await getTemplates();
+//   console.log('list,', list);
   const matchedItem = list.find((item) => item.name === targetTemplate);
   return matchedItem.downloadUrl;
 }
@@ -65,6 +68,38 @@ async function installPkgs(projectName) {
   }
 }
 
+// 提问，收集选项信息
+// @see https://www.npmjs.com/package/inquirer
+async function askQuestions({ templates }) {
+  const questions = [{
+    type: 'list',
+    name: 'template',
+    message: '请选择模板',
+    choices: templates.map((item) => item.name),
+  }];
+
+  const hasProjectName = true;
+  if (!hasProjectName) {
+    questions.unshift({
+      type: 'input',
+      name: 'projectName',
+      message: '请输入项目名称',
+    });
+  }
+
+  return new Promise((resolve) => {
+    inquirer
+      .prompt(questions)
+      .then((answers) => {
+        resolve(answers);
+      })
+      .catch((error) => {
+        resolve(null);
+        console.log('error', error);
+      });
+  });
+}
+
 /**
  *
  * @param {String} projectName projectName
@@ -73,8 +108,21 @@ async function installPkgs(projectName) {
  */
 async function create(projectName, options) {
   // console.log('create', projectName, options)
+  const templates = await getTemplates();
+  if (!templates.length) {
+    log.error('找不到模板，请检查网络');
+    return;
+  }
 
-  const downloadUrl = await getDownloadUrl(options.template);
+  let { template } = options;
+  if (!template) {
+    const answers = await askQuestions({ templates });
+    if (!answers) return;
+
+    template = answers.template;
+  }
+
+  const downloadUrl = await getDownloadUrl(templates, template);
 
   const isDownloadSuccess = await downloadRepo(downloadUrl, projectName);
   if (!isDownloadSuccess) return;
